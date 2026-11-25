@@ -97,7 +97,10 @@ fi
 
 step "Packaging"
 rm -f "$ZIP" "$ZIP.sha256"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
+# No extended attributes or resource forks: they'd add __MACOSX/ files carrying this Mac's
+# com.apple.provenance tag (a per-machine ID). The signature and stapled ticket live inside the app.
+ditto -c -k --norsrc --noextattr --keepParent "$APP" "$ZIP"
+if zipinfo -1 "$ZIP" | grep -q '__MACOSX'; then fail "The zip contains __MACOSX metadata."; fi
 (cd dist && shasum -a 256 "${ZIP:t}" > "${ZIP:t}.sha256")
 echo "$ZIP"
 cat "$ZIP.sha256"
