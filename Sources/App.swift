@@ -333,7 +333,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var first: [String] = []
         if let id = ClaudeConfigInfo.cliIdentity(account), let email = id.email { first.append(email) }
         if let u = usage.summaries[account.id], u.today.messages > 0 {
-            first.append("today \(UsageStore.tokens(u.today.total)) tokens (\(UsageStore.tokens(u.today.output)) out) · \(u.sessionsToday) session\(u.sessionsToday == 1 ? "" : "s")")
+            first.append("today \(UsageStore.tokens(u.today.total)) tokens ≈ \(Pricing.usd(u.today.cost)) at API prices · \(u.sessionsToday) session\(u.sessionsToday == 1 ? "" : "s")")
         }
         if !first.isEmpty { lines.append(first.joined(separator: " · ")) }
         if ClaudeConfigInfo.cliIdentity(account) == nil { lines.append("⚠︎ Claude Code (Terminal) isn't signed in") }
@@ -358,13 +358,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         })
 
         m.addItem(.separator())
-        m.addItem(NSMenuItem.sectionHeader(title: "Usage"))
+        m.addItem(NSMenuItem.sectionHeader(title: "Usage at API pay-as-you-go prices"))
         if let u = usage.summaries[account.id] {
-            m.addItem(info("Today: \(UsageStore.tokens(u.today.allInput)) in · \(UsageStore.tokens(u.today.output)) out · \(u.today.messages) replies"))
-            var week = DayTotals(); u.days.forEach { week.add($0.1) }
-            m.addItem(info("7 days: \(UsageStore.tokens(week.allInput)) in · \(UsageStore.tokens(week.output)) out · \(week.messages) replies"))
-            if let peak = u.days.max(by: { $0.1.total < $1.1.total }), peak.1.total > 0 {
-                m.addItem(info("Busiest: \(Self.weekday(peak.0)) · \(UsageStore.tokens(peak.1.total)) tokens"))
+            func line(_ label: String, _ t: DayTotals) -> String {
+                "\(label): \(Pricing.usd(t.cost)) · \(UsageStore.tokens(t.total)) tokens · \(t.messages) replies"
+            }
+            m.addItem(info(line("Today", u.today)))
+            m.addItem(info(line("7 days", u.week)))
+            m.addItem(info(line("30 days", u.month)))
+            if let peak = u.days.max(by: { $0.1.cost < $1.1.cost }), peak.1.cost > 0 {
+                m.addItem(info("Busiest day: \(Self.weekday(peak.0)) · \(Pricing.usd(peak.1.cost))"))
+            }
+            if !u.monthByModel.isEmpty {
+                let models = NSMenuItem(title: "By Model (30 days)", action: nil, keyEquivalent: "")
+                models.image = NSImage(systemSymbolName: "cpu", accessibilityDescription: nil)
+                let sub = NSMenu(); sub.autoenablesItems = false
+                for (model, t) in u.monthByModel {
+                    let share = u.month.cost > 0 ? Int((t.cost / u.month.cost * 100).rounded()) : 0
+                    sub.addItem(info("\(Pricing.displayName(model)): \(Pricing.usd(t.cost)) (\(share)%) · \(t.messages) replies"))
+                }
+                sub.addItem(.separator())
+                let mo = u.month
+                sub.addItem(info("Where it goes: cache writes \(Pricing.usd(mo.costCacheWrite)) · cache reads \(Pricing.usd(mo.costCacheRead)) · output \(Pricing.usd(mo.costOutput)) · input \(Pricing.usd(mo.costInput))"))
+                sub.addItem(info("List prices as of \(Pricing.asOf); a subscription isn't billed this way"))
+                models.submenu = sub
+                m.addItem(models)
             }
         } else {
             m.addItem(info(usage.isRefreshing ? "Counting…" : "No usage yet"))
@@ -734,7 +752,11 @@ enum Main {
             print("   Claude Code: \(who?.email ?? "NOT signed in") \(who?.organization.map { "(\($0))" } ?? "") — \(abbreviate(a.effectiveCLIConfigDir))")
             if let u = usage.summaries[a.id] {
                 print("   Usage today: \(UsageStore.tokens(u.today.total)) tokens (\(UsageStore.tokens(u.today.output)) out), \(u.today.messages) replies, \(u.sessionsToday) sessions")
-                print("   Last 7 days: " + u.days.map { "\($0.0.suffix(5)) \(UsageStore.tokens($0.1.total))" }.joined(separator: ", "))
+                print("   At API prices: today \(Pricing.usd(u.today.cost)), 7 days \(Pricing.usd(u.week.cost)), 30 days \(Pricing.usd(u.month.cost))")
+                print("   Last 7 days: " + u.days.map { "\($0.0.suffix(5)) \(Pricing.usd($0.1.cost))" }.joined(separator: ", "))
+                for (model, t) in u.monthByModel {
+                    print("     \(Pricing.displayName(model).padding(toLength: 11, withPad: " ", startingAt: 0)) \(Pricing.usd(t.cost).padding(toLength: 9, withPad: " ", startingAt: 0)) \(t.messages) replies · in \(UsageStore.tokens(t.input)) · write 5m \(UsageStore.tokens(t.cacheWrite5m)) / 1h \(UsageStore.tokens(t.cacheWrite1h)) · read \(UsageStore.tokens(t.cacheRead)) · out \(UsageStore.tokens(t.output))\(t.unpriced > 0 ? " · \(t.unpriced) unpriced" : "")")
+                }
             }
             let recent = ClaudeConfigInfo.recentFolders(a, limit: 5)
             print("   Recent: " + (recent.isEmpty ? "none" : recent.map(\.name).joined(separator: ", ")))

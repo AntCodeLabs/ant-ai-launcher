@@ -202,21 +202,25 @@ struct AccountEditor: View {
         Section {
             if let u = usage.summaries[account.id] {
                 HStack(spacing: 18) {
-                    stat("Today", UsageStore.tokens(u.today.total), "tokens")
-                    stat("Output", UsageStore.tokens(u.today.output), "tokens")
-                    stat("Replies", "\(u.today.messages)", "today")
+                    stat("Today", Pricing.usd(u.today.cost), "\(UsageStore.tokens(u.today.total)) tokens")
+                    stat("7 days", Pricing.usd(u.week.cost), "\(UsageStore.tokens(u.week.total)) tokens")
+                    stat("30 days", Pricing.usd(u.month.cost), "\(UsageStore.tokens(u.month.total)) tokens")
                     stat("Sessions", "\(u.sessionsToday)", "today")
                 }
                 UsageBars(days: u.days)
                     .frame(height: 120)
-                Text("Counts every reply's tokens (input incl. cache + output) from Claude Code's session logs, for terminal sessions and this login's Desktop Code sessions.")
+                if !u.monthByModel.isEmpty {
+                    ModelBreakdown(rows: u.monthByModel, total: u.month)
+                }
+                (Text("What this usage would cost at Claude API pay-as-you-go list prices (as of \(Pricing.asOf)), not what a subscription charges. Covers terminal sessions and this login's Desktop Code sessions, from Claude Code's session logs. ")
+                    + Text("[Pricing](\(Pricing.source.absoluteString))"))
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Text(usage.isRefreshing ? "Counting…" : "No usage recorded in the last week.").foregroundStyle(.secondary)
+                Text(usage.isRefreshing ? "Counting…" : "No usage recorded in the last month.").foregroundStyle(.secondary)
             }
         } header: {
             HStack {
-                Text("Usage · last 7 days")
+                Text("Usage at API prices")
                 Spacer()
                 if usage.isRefreshing { ProgressView().controlSize(.small) }
                 Button { usage.refresh() } label: { Image(systemName: "arrow.clockwise") }
@@ -326,24 +330,24 @@ struct UsageBars: View {
     let days: [(String, DayTotals)]
 
     var body: some View {
-        let peak = max(days.map(\.1.total).max() ?? 0, 1)
+        let peak = max(days.map(\.1.cost).max() ?? 0, 0.0001)
         HStack(alignment: .bottom, spacing: 8) {
             ForEach(days, id: \.0) { day, t in
                 VStack(spacing: 4) {
-                    Text(t.total > 0 ? UsageStore.tokens(t.total) : "")
+                    Text(t.cost > 0 ? Pricing.usd(t.cost) : "")
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                     GeometryReader { geo in
                         VStack(spacing: 0) {
                             Spacer(minLength: 0)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(Color(nsColor: Brand.acid).opacity(day == days.last?.0 ? 1 : 0.6))
-                                .frame(height: max(2, geo.size.height * CGFloat(t.total) / CGFloat(peak)))
+                                .frame(height: max(2, geo.size.height * CGFloat(t.cost / peak)))
                         }
                     }
                     Text(Self.label(day)).font(.caption2).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .help("\(day): \(UsageStore.tokens(t.allInput)) in, \(UsageStore.tokens(t.output)) out, \(t.messages) replies")
+                .help("\(day): \(Pricing.usd(t.cost)) · \(UsageStore.tokens(t.total)) tokens · \(t.messages) replies")
             }
         }
     }
@@ -351,6 +355,63 @@ struct UsageBars: View {
     private static func label(_ day: String) -> String {
         guard let d = UsageStore.dayFormatter.date(from: day) else { return day }
         let f = DateFormatter(); f.dateFormat = "EEE"; return f.string(from: d)
+    }
+}
+
+/// Per-model table for the last 30 days: tokens by type and their API-price cost.
+struct ModelBreakdown: View {
+    let rows: [(String, DayTotals)]
+    let total: DayTotals
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("By model · last 30 days").font(.subheadline.weight(.semibold))
+            Grid(alignment: .trailing, horizontalSpacing: 14, verticalSpacing: 4) {
+                GridRow {
+                    Text("Model").gridColumnAlignment(.leading)
+                    Text("Replies"); Text("Input"); Text("Cache write"); Text("Cache read"); Text("Output"); Text("Cost"); Text("")
+                }
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Divider()
+                ForEach(rows, id: \.0) { model, t in
+                    GridRow {
+                        Text(Pricing.displayName(model)).gridColumnAlignment(.leading)
+                        Text("\(t.messages)")
+                        Text(UsageStore.tokens(t.input))
+                        Text(UsageStore.tokens(t.cacheWrite)).help("5-minute \(UsageStore.tokens(t.cacheWrite5m)) · 1-hour \(UsageStore.tokens(t.cacheWrite1h))")
+                        Text(UsageStore.tokens(t.cacheRead))
+                        Text(UsageStore.tokens(t.output))
+                        Text(t.unpriced == t.messages ? "—" : Pricing.usd(t.cost)).fontWeight(.semibold)
+                        Text(total.cost > 0 ? "\(Int((t.cost / total.cost * 100).rounded()))%" : "").foregroundStyle(.secondary)
+                    }
+                    .help("Input \(Pricing.usd(t.costInput)) · cache writes \(Pricing.usd(t.costCacheWrite)) · cache reads \(Pricing.usd(t.costCacheRead)) · output \(Pricing.usd(t.costOutput))\(t.unpriced > 0 ? " · \(t.unpriced) replies from a model without a known price" : "")")
+                }
+                Divider()
+                GridRow {
+                    Text("Total").gridColumnAlignment(.leading)
+                    Text("\(total.messages)")
+                    Text(UsageStore.tokens(total.input))
+                    Text(UsageStore.tokens(total.cacheWrite))
+                    Text(UsageStore.tokens(total.cacheRead))
+                    Text(UsageStore.tokens(total.output))
+                    Text(Pricing.usd(total.cost))
+                    Text("")
+                }
+                .fontWeight(.semibold)
+                GridRow {
+                    Text("Cost").gridColumnAlignment(.leading).foregroundStyle(.secondary)
+                    Text("")
+                    Text(Pricing.usd(total.costInput))
+                    Text(Pricing.usd(total.costCacheWrite))
+                    Text(Pricing.usd(total.costCacheRead))
+                    Text(Pricing.usd(total.costOutput))
+                    Text(""); Text("")
+                }
+                .foregroundStyle(.secondary)
+            }
+            .font(.callout.monospacedDigit())
+        }
+        .padding(.vertical, 4)
     }
 }
 
