@@ -46,7 +46,7 @@ enum Processes {
         var len = Int(argMax)
         var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
         guard sysctl(&mib, 3, &buf, &len, nil, 0) == 0, len > 4 else { return nil }
-        defer { buf.withUnsafeMutableBytes { memset_s($0.baseAddress, $0.count, 0, $0.count) } }  // wipe the copy
+        defer { _ = buf.withUnsafeMutableBytes { memset_s($0.baseAddress, $0.count, 0, $0.count) } }  // wipe the copy
         var argc: Int32 = 0
         withUnsafeMutableBytes(of: &argc) { $0.copyBytes(from: buf[0..<4]) }
         var i = 4
