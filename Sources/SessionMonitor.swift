@@ -172,8 +172,7 @@ final class SessionMonitor: ObservableObject {
         // Terminal sessions that haven't registered yet (e.g. sitting at the "trust this folder?" question).
         let registeredPIDs = Set(out.map(\.pid))
         for p in procs where p.comm == "claude" && p.tty != nil && !registeredPIDs.contains(p.pid) {
-            let env = Processes.environment(p.pid)
-            let dir = ClaudeInstances.normalise(env["CLAUDE_CONFIG_DIR"] ?? "~/.claude")
+            let dir = ClaudeInstances.normalise(Processes.environmentValue(p.pid, "CLAUDE_CONFIG_DIR") ?? "~/.claude")
             let cwd = Processes.cwd(p.pid) ?? ""
             let account = accounts.first { $0.effectiveCLIConfigDir == dir }
             out.append(LiveSession(

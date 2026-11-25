@@ -23,18 +23,16 @@ enum ClaudeConfigInfo {
 
     /// The account Claude Code is signed in to for this login (from `oauthAccount` in .claude.json).
     static func cliIdentity(_ account: Account) -> CLIIdentity? {
-        guard let j = cachedJSON(globalConfigURL(account)),
-              let o = j["oauthAccount"] as? [String: Any] else { return nil }
-        return CLIIdentity(email: o["emailAddress"] as? String,
-                           organization: o["organizationName"] as? String,
-                           plan: (o["planDisplayName"] as? String) ?? (o["seatTier"] as? String))
+        globalConfig(account)?.identity
     }
 
-    /// Whether the Desktop profile exists and holds a sign-in (checks only that the token key is present).
+    /// Whether the Desktop profile exists and holds a sign-in. Only the presence of the token entry is
+    /// checked; the parsed file is dropped straight away so no token data stays in memory.
     static func desktopState(_ account: Account) -> DesktopState {
-        let cfg = URL(fileURLWithPath: account.resolvedDataDir).appendingPathComponent("config.json")
-        guard let j = cachedJSON(cfg) else { return .missing }
-        return (j["oauth:tokenCacheV2"] != nil || j["oauth:tokenCache"] != nil) ? .signedIn : .signedOut
+        let url = URL(fileURLWithPath: account.resolvedDataDir).appendingPathComponent("config.json")
+        return cached(url, into: &desktopStateCache) { j in
+            (j["oauth:tokenCacheV2"] != nil || j["oauth:tokenCache"] != nil) ? .signedIn : .signedOut
+        } ?? .missing
     }
 
     // MARK: Desktop session index
@@ -98,8 +96,8 @@ enum ClaudeConfigInfo {
 
         // Terminal: projects listed in .claude.json, dated by their transcript folder.
         let projectsDir = URL(fileURLWithPath: account.effectiveCLIConfigDir).appendingPathComponent("projects")
-        if let j = cachedJSON(globalConfigURL(account)), let projects = j["projects"] as? [String: Any] {
-            for path in projects.keys {
+        if let projects = globalConfig(account)?.projectPaths {
+            for path in projects {
                 let enc = path.replacingOccurrences(of: "[^A-Za-z0-9]", with: "-", options: .regularExpression)
                 let dir = projectsDir.appendingPathComponent(enc)
                 if let d = (try? fm.attributesOfItem(atPath: dir.path))?[.modificationDate] as? Date { note(path, d) }
@@ -140,18 +138,41 @@ enum ClaudeConfigInfo {
 
     // MARK: Cache
 
-    private static var cache: [String: (Date, [String: Any])] = [:]
+    /// The only parts of `.claude.json` the app uses. The rest (MCP server settings, which can hold API
+    /// keys, and everything else) is never kept.
+    private struct GlobalConfig {
+        let identity: CLIIdentity?
+        let projectPaths: [String]
+    }
+
+    private static var globalConfigCache: [String: (Date, GlobalConfig)] = [:]
+    private static var desktopStateCache: [String: (Date, DesktopState)] = [:]
     private static let lock = NSLock()
 
-    /// Parses a JSON file, reusing the last parse while its modification date is unchanged.
-    static func cachedJSON(_ url: URL) -> [String: Any]? {
+    private static func globalConfig(_ account: Account) -> GlobalConfig? {
+        cached(globalConfigURL(account), into: &globalConfigCache) { j in
+            let o = j["oauthAccount"] as? [String: Any]
+            return GlobalConfig(
+                identity: o.map {
+                    CLIIdentity(email: $0["emailAddress"] as? String,
+                                organization: $0["organizationName"] as? String,
+                                plan: ($0["planDisplayName"] as? String) ?? ($0["seatTier"] as? String))
+                },
+                projectPaths: Array((j["projects"] as? [String: Any])?.keys ?? [:].keys))
+        }
+    }
+
+    /// Parses a JSON file and keeps only what `extract` returns, reusing it while the file is unchanged.
+    private static func cached<T>(_ url: URL, into cache: inout [String: (Date, T)],
+                                  _ extract: ([String: Any]) -> T) -> T? {
         guard let mtime = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
         else { return nil }
         lock.lock(); defer { lock.unlock() }
-        if let (d, j) = cache[url.path], d == mtime { return j }
+        if let (d, v) = cache[url.path], d == mtime { return v }
         guard let data = try? Data(contentsOf: url),
               let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        cache[url.path] = (mtime, j)
-        return j
+        let value = extract(j)
+        cache[url.path] = (mtime, value)
+        return value
     }
 }

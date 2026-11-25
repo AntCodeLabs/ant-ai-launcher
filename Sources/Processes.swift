@@ -35,34 +35,35 @@ enum Processes {
         kill(pid, 0) == 0 || errno == EPERM
     }
 
-    /// Environment of another process (same user), from KERN_PROCARGS2 after its argv.
-    static func environment(_ pid: pid_t) -> [String: String] {
+    /// One environment variable of another process (same user), from KERN_PROCARGS2 after its argv.
+    /// Only the requested variable is kept; the rest of the environment (which may hold API keys) is skipped.
+    static func environmentValue(_ pid: pid_t, _ name: String) -> String? {
         var argMax: Int32 = 0
         var size = MemoryLayout<Int32>.size
         var mibMax: [Int32] = [CTL_KERN, KERN_ARGMAX]
-        guard sysctl(&mibMax, 2, &argMax, &size, nil, 0) == 0, argMax > 0 else { return [:] }
+        guard sysctl(&mibMax, 2, &argMax, &size, nil, 0) == 0, argMax > 0 else { return nil }
         var buf = [UInt8](repeating: 0, count: Int(argMax))
         var len = Int(argMax)
         var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
-        guard sysctl(&mib, 3, &buf, &len, nil, 0) == 0, len > 4 else { return [:] }
+        guard sysctl(&mib, 3, &buf, &len, nil, 0) == 0, len > 4 else { return nil }
+        defer { buf.withUnsafeMutableBytes { memset_s($0.baseAddress, $0.count, 0, $0.count) } }  // wipe the copy
         var argc: Int32 = 0
         withUnsafeMutableBytes(of: &argc) { $0.copyBytes(from: buf[0..<4]) }
         var i = 4
         while i < len && buf[i] != 0 { i += 1 }      // exec path
         while i < len && buf[i] == 0 { i += 1 }
-        var strings: [String] = []
+        let prefix = Array((name + "=").utf8)
+        var index = 0
         while i < len {
             let start = i
             while i < len && buf[i] != 0 { i += 1 }
             if i == start { break }                  // empty string ends the env block
-            strings.append(String(decoding: buf[start..<i], as: UTF8.self))
-            i += 1
+            if index >= Int(argc), i - start > prefix.count, Array(buf[start..<start + prefix.count]) == prefix {
+                return String(decoding: buf[(start + prefix.count)..<i], as: UTF8.self)
+            }
+            index += 1; i += 1
         }
-        var env: [String: String] = [:]
-        for s in strings.dropFirst(Int(argc)) {
-            if let eq = s.firstIndex(of: "=") { env[String(s[..<eq])] = String(s[s.index(after: eq)...]) }
-        }
-        return env
+        return nil
     }
 
     /// Current working directory of another process.
