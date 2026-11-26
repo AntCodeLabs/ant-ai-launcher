@@ -172,15 +172,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let login = config.accounts.first { $0.id == s.accountID }?.name ?? "Unknown login"
         let since = s.statusSince.map { Self.relative.localizedString(for: $0, relativeTo: Date()) } ?? ""
         let status = s.status == .needsYou ? (s.waitingFor.map { "needs you: \($0)" } ?? "needs you") : s.status.label
-        let detail = "\(s.folderName) · \(login) · \(s.isDesktop ? "Desktop" : "Terminal") · \(status)\(since.isEmpty ? "" : " \(since)")"
+        let detail = "\(s.folderName) · \(login) · \(s.where_) · \(status)\(since.isEmpty ? "" : " \(since)")"
 
         let item = action(s.name) { [weak self] in self?.monitor.focus(s) }
         item.image = statusSymbol(s.status)
         if #available(macOS 14.4, *) { item.subtitle = detail } else { item.title = "\(s.name) — \(detail)" }
-        item.toolTip = "\(s.cwd)\nClick to bring it to the front"
+        item.toolTip = s.isBackground
+            ? "\(s.cwd)\nClick to open it in Terminal (claude attach \(s.jobId ?? ""))"
+            : "\(s.cwd)\nClick to bring it to the front"
         menu.addItem(item)
 
-        if !s.isDesktop {
+        if !s.isDesktop && !s.isBackground {
             let stop = action("Stop “\(s.name)”", symbol: "stop.circle", alternate: .control) { [weak self] in
                 self?.confirmStop(s)
             }
@@ -288,11 +290,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Prompts
         menu.addItem(action("New Session with Prompt…", symbol: "text.bubble") { [weak self] in
-            self?.promptAndLaunch(account, terminal: false)
+            self?.promptAndLaunch(account, target: .desktop)
         })
         menu.addItem(action("New Terminal Session with Prompt…", symbol: "terminal", alternate: .option) { [weak self] in
-            self?.promptAndLaunch(account, terminal: true)
+            self?.promptAndLaunch(account, target: .terminal)
         })
+        let cloud = action("New Cloud Session…", symbol: "cloud") { [weak self] in
+            self?.promptAndLaunch(account, target: .cloud)
+        }
+        cloud.toolTip = "claude --cloud in a repo folder, signed in as this login (CLAUDE_CONFIG_DIR=\(abbreviate(account.effectiveCLIConfigDir)))"
+        menu.addItem(cloud)
         let saved = account.workspaces.flatMap { ws in ws.prompts.map { (ws, $0) } }
         if !saved.isEmpty {
             let item = NSMenuItem(title: "Saved Prompts", action: nil, keyEquivalent: "")
@@ -352,6 +359,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ClaudeInstances.open(account, url: ClaudeInstances.continueURL(), claudeAppPath: config.claudeAppPath) { e in
                 if let e { AppDelegate.showError(e) } }
         })
+        m.addItem(NSMenuItem.sectionHeader(title: "Claude Code"))
+        m.addItem(action("Claude Code on the Web", symbol: "globe") {
+            NSWorkspace.shared.open(URL(string: "https://claude.ai/code")!)
+        })
+        m.addItem(action("Background Sessions (Agent View)", symbol: "rectangle.stack") {
+            TerminalLauncher.launch(account, workspace: nil, config: config, extraArgs: ["agents"]) { e in
+                if let e { AppDelegate.showError(e) } }
+        })
+        m.addItem(.separator())
+        m.addItem(NSMenuItem.sectionHeader(title: "Claude Desktop"))
         m.addItem(action("Sessions Waiting for You", symbol: "exclamationmark.bubble") {
             ClaudeInstances.open(account, url: ClaudeInstances.needsInputURL, claudeAppPath: config.claudeAppPath) { e in
                 if let e { AppDelegate.showError(e) } }
@@ -498,7 +515,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Asks for a folder and a prompt, then starts a session with that prompt.
-    private func promptAndLaunch(_ account: Account, terminal: Bool) {
+    enum PromptTarget { case desktop, terminal, cloud }
+
+    /// Asks for a folder and a prompt, then starts a Desktop, Terminal or cloud session with it.
+    private func promptAndLaunch(_ account: Account, target: PromptTarget) {
+        let terminal = target != .desktop
         NSApp.activate(ignoringOtherApps: true)
         var choices: [(String, String)] = account.workspaces.map { ($0.name, $0.expandedPath) }
         for r in ClaudeConfigInfo.recentFolders(account, limit: 8) { choices.append(("\(r.name) (recent)", r.path)) }
@@ -518,10 +539,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         [popup, scroll, save].forEach(box.addSubview)
 
         let alert = NSAlert()
-        alert.messageText = "New \(terminal ? "Terminal" : "Claude Desktop") session for \(account.name)"
-        alert.informativeText = terminal
-            ? "Claude Code starts in the folder and runs the prompt straight away."
-            : "Claude Desktop opens a new Code session in the folder with the prompt filled in."
+        switch target {
+        case .desktop:
+            alert.messageText = "New Claude Desktop session for \(account.name)"
+            alert.informativeText = "Claude Desktop opens a new Code session in the folder with the prompt filled in."
+        case .terminal:
+            alert.messageText = "New Terminal session for \(account.name)"
+            alert.informativeText = "Claude Code starts in the folder and runs the prompt straight away."
+        case .cloud:
+            alert.messageText = "New cloud session for \(account.name)"
+            alert.informativeText = "Runs `claude --cloud` from the folder's repository, signed in as this login. It keeps running on Anthropic's cloud after you close Terminal; follow it on claude.ai/code."
+            save.isHidden = true
+        }
         alert.accessoryView = box
         alert.addButton(withTitle: "Start")
         alert.addButton(withTitle: "Cancel")
@@ -529,6 +558,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
         let prompt = text.string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if target == .cloud && prompt.isEmpty { return }   // a cloud session needs a task
         var path = popup.selectedItem?.representedObject as? String
         if path == nil {
             let panel = NSOpenPanel()
@@ -551,7 +581,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
         }
-        launch(account, ws, terminal: terminal, prompt: prompt)
+        if target == .cloud {
+            launch(account, ws, terminal: true, extraArgs: ["--cloud", prompt])
+        } else {
+            launch(account, ws, terminal: terminal, prompt: prompt)
+        }
     }
 
     /// Opens Claude for the login and every folder marked "Start My Day", each in its own mode.
@@ -765,7 +799,7 @@ enum Main {
         print("Sessions (\(monitor.sessions.count)):")
         for s in monitor.sessions {
             let login = config.accounts.first { $0.id == s.accountID }?.name ?? "?"
-            print("   [\(s.status.label)] \(s.name) — \(s.folderName) · \(login) · \(s.isDesktop ? "Desktop" : "Terminal \(s.tty ?? "")")\(s.waitingFor.map { " · waiting for \($0)" } ?? "")")
+            print("   [\(s.status.label)] \(s.name) — \(s.folderName) · \(login) · \(s.where_)\(s.tty.map { " \($0)" } ?? "")\(s.jobId.map { " (attach \($0))" } ?? "")\(s.waitingFor.map { " · waiting for \($0)" } ?? "")")
         }
         print(String(format: "(usage scan took %.1fs)", usageSecs))
     }

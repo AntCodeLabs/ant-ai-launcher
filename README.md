@@ -33,6 +33,7 @@ On first run the app adds Claude's normal profile, plus any other `Claude-<name>
 - **New Session with Prompt…** starts a session with your prompt. Terminal sends it straight away; Desktop fills it in. Prompts can be saved per folder.
 - **Shortcuts:** give a folder **⌃⌥⌘1…9** in Settings to open it from anywhere.
 - **Start My Day** opens every folder you've marked for it.
+- **New Cloud Session…** runs `claude --cloud "<task>"` from a repo folder, signed in as that login. **More ▸ Claude Code on the Web** opens claude.ai/code, where cloud sessions live (the app can't list them: they don't run on your Mac).
 
 ## Monitor
 
@@ -42,7 +43,7 @@ On first run the app adds Claude's normal profile, plus any other `Claude-<name>
   - *working* or *idle*
   - *starting*: for example, at the "trust this folder?" question
 
-  Click a session to jump to it: Desktop opens that exact session, and Terminal brings its tab forward. ⌃-click stops a Terminal session.
+  Click a session to jump to it: Desktop opens that exact session, Terminal brings its tab forward, and a background session (`claude --bg`) opens in Terminal with `claude attach`. ⌃-click stops a Terminal session. **More ▸ Background Sessions** opens Claude Code's agent view.
 - The **ant shows a count** when sessions need you or have finished.
 - Each login shows who Claude Desktop and Claude Code are signed in as, today's tokens, and Claude Desktop's memory and CPU. **More ▸** and Settings show 7-day usage.
 - **More ▸ Configuration** opens each login's `settings.json`, `CLAUDE.md`, `.claude.json` (MCP servers) and Desktop MCP config.

@@ -48,7 +48,14 @@ struct LiveSession: Identifiable, Hashable {
     let isDesktop: Bool
     let accountID: UUID?
     let tty: String?
+    /// Registry kind: "interactive", or "bg" / "daemon-worker" for `claude --bg` sessions.
+    var kind: String? = nil
+    /// Background sessions' short id, as used by `claude attach <id>`.
+    var jobId: String? = nil
     var id: pid_t { pid }
+
+    var isBackground: Bool { kind == "bg" || kind == "daemon-worker" }
+    var where_: String { isDesktop ? "Desktop" : isBackground ? "Background" : "Terminal" }
 
     var folderName: String { URL(fileURLWithPath: cwd).lastPathComponent }
 }
@@ -166,7 +173,8 @@ final class SessionMonitor: ObservableObject {
                     name: name, cwd: cwd, status: status, waitingFor: waitingFor,
                     statusSince: Self.date(j["statusUpdatedAt"]),
                     startedAt: Self.date(j["startedAt"]),
-                    isDesktop: isDesktop, accountID: account?.id, tty: isDesktop ? nil : proc.tty))
+                    isDesktop: isDesktop, accountID: account?.id, tty: isDesktop ? nil : proc.tty,
+                    kind: j["kind"] as? String, jobId: j["jobId"] as? String))
             }
         }
         // Terminal sessions that haven't registered yet (e.g. sitting at the "trust this folder?" question).
@@ -234,6 +242,16 @@ final class SessionMonitor: ObservableObject {
             }
             return
         }
+        if session.isBackground {
+            // No window to bring forward: open it in Terminal with `claude attach <id>`, under the same login.
+            guard let id = session.jobId,
+                  let account = config.accounts.first(where: { $0.id == session.accountID }) else { return }
+            let ws = Workspace(name: session.folderName, path: session.cwd)
+            TerminalLauncher.launch(account, workspace: ws, config: config, extraArgs: ["attach", id]) { err in
+                if let err { AppDelegate.showError(err) }
+            }
+            return
+        }
         let host = Processes.hostApp(of: session.pid, in: Processes.all())
         if host?.bundleIdentifier == "com.apple.Terminal", let tty = session.tty {
             TerminalLauncher.focusTerminalTab(tty: "/dev/\(tty)")
@@ -244,7 +262,7 @@ final class SessionMonitor: ObservableObject {
 
     /// Ends a terminal session the way closing its window would.
     func stop(_ session: LiveSession) {
-        guard !session.isDesktop else { return }
+        guard !session.isDesktop, !session.isBackground else { return }
         kill(session.pid, SIGTERM)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.refresh() }
     }
@@ -254,6 +272,6 @@ private extension LiveSession {
     func with(status: SessionStatus) -> LiveSession {
         LiveSession(pid: pid, sessionId: sessionId, hostSessionId: hostSessionId, name: name, cwd: cwd,
                     status: status, waitingFor: waitingFor, statusSince: statusSince, startedAt: startedAt,
-                    isDesktop: isDesktop, accountID: accountID, tty: tty)
+                    isDesktop: isDesktop, accountID: accountID, tty: tty, kind: kind, jobId: jobId)
     }
 }
