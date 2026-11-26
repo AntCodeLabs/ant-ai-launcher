@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds "Ant AI Launcher.app" with the Command Line Tools (no Xcode project needed).
+# Builds "Clauncher.app" with the Command Line Tools (no Xcode project needed).
 #   ./build.sh            universal build into ./build, signed ad hoc
 #   ./build.sh install    build, then copy to ~/Applications and open it
 #
@@ -7,13 +7,13 @@
 set -euo pipefail
 cd "${0:A:h}"
 
-APP_NAME="Ant AI Launcher"
-EXECUTABLE="AntAILauncher"
+APP_NAME="Clauncher"
+EXECUTABLE="Clauncher"
 BUNDLE_ID="ai.antcodelabs.ant-ai-launcher"
 VERSION="$(tr -d '[:space:]' < VERSION)"
 BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 OUT="build/${APP_NAME}.app"
-ENTITLEMENTS="Resources/AntAILauncher.entitlements"
+ENTITLEMENTS="Resources/Clauncher.entitlements"
 
 rm -rf "$OUT" build/arch
 mkdir -p "$OUT/Contents/MacOS" "$OUT/Contents/Resources" build/arch
@@ -47,7 +47,7 @@ cat > "$OUT/Contents/Info.plist" <<PLIST
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSAppleEventsUsageDescription</key>
-  <string>Ant AI Launcher sends Claude the folder or session to open, and brings Terminal tabs to the front.</string>
+  <string>Clauncher sends Claude the folder or session to open, and brings Terminal tabs to the front.</string>
 </dict>
 </plist>
 PLIST
@@ -66,8 +66,9 @@ if [[ "${1:-}" == "install" ]]; then
   DEST="$HOME/Applications/${APP_NAME}.app"
   mkdir -p "$HOME/Applications"
   pkill -x "$EXECUTABLE" 2>/dev/null || true
-  for _ in {1..50}; do pgrep -x "$EXECUTABLE" >/dev/null || break; sleep 0.1; done  # let it exit before relaunching
-  rm -rf "$DEST"
+  pkill -x AntAILauncher 2>/dev/null || true   # the app's previous name (Ant AI Launcher)
+  for _ in {1..50}; do pgrep -x "$EXECUTABLE|AntAILauncher" >/dev/null || break; sleep 0.1; done  # let it exit before relaunching
+  rm -rf "$DEST" "$HOME/Applications/Ant AI Launcher.app"
   cp -R "$OUT" "$DEST"
   open "$DEST"
   echo "Installed to $DEST"

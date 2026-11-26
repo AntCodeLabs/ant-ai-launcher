@@ -156,11 +156,11 @@ final class ConfigStore: ObservableObject {
     let fileURL: URL = {
         let support = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support", isDirectory: true)
-        let dir = support.appendingPathComponent("Ant AI Launcher", isDirectory: true)
+        let dir = support.appendingPathComponent("Clauncher", isDirectory: true)
         // Carry settings over from the app's earlier names, once.
         let fm = FileManager.default
         if !fm.fileExists(atPath: dir.path) {
-            for legacy in ["Ant Claude Launcher", "Claude Launcher"] {
+            for legacy in ["Ant AI Launcher", "Ant Claude Launcher", "Claude Launcher"] {
                 let old = support.appendingPathComponent(legacy, isDirectory: true)
                 if fm.fileExists(atPath: old.appendingPathComponent("config.json").path) {
                     try? fm.moveItem(at: old, to: dir)
@@ -208,7 +208,7 @@ final class ConfigStore: ObservableObject {
             enc.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             try enc.encode(config).write(to: fileURL, options: .atomic)
         } catch {
-            NSLog("Ant AI Launcher: failed to save config: \(error)")
+            NSLog("Clauncher: failed to save config: \(error)")
         }
     }
 }

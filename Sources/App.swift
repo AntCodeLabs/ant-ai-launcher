@@ -28,7 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let button = statusItem.button {
             button.image = Brand.menuBarIcon
             button.imagePosition = .imageLeft
-            button.toolTip = "Ant AI Launcher · \(Brand.company)"
+            button.toolTip = "Clauncher · \(Brand.company)"
         }
         let menu = NSMenu()
         menu.delegate = self
@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ])
         }
         let working = monitor.sessions.filter { $0.status == .working }.count
-        button.toolTip = "Ant AI Launcher · \(monitor.sessions.count) sessions, \(working) working, \(n) need a look"
+        button.toolTip = "Clauncher · \(monitor.sessions.count) sessions, \(working) working, \(n) need a look"
     }
 
     // MARK: Menu
@@ -119,7 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             menu.addItem(action("Check for Updates…") { [weak self] in self?.checkForUpdates() })
         }
-        menu.addItem(action("About Ant AI Launcher") { [weak self] in self?.showAbout() })
+        menu.addItem(action("About Clauncher") { [weak self] in self?.showAbout() })
         menu.addItem(action("\(Brand.company) · \(Brand.websiteLabel)", symbol: "arrow.up.right.square") {
             NSWorkspace.shared.open(Brand.website)
         })
@@ -129,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let login = action("Open at Login") { [weak self] in self?.toggleLoginItem() }
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
-        menu.addItem(NSMenuItem(title: "Quit Ant AI Launcher", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Clauncher", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -651,7 +651,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSApp.activate(ignoringOtherApps: true)
             let alert = NSAlert()
             if updates.updateAvailable, let v = updates.latestVersion {
-                alert.messageText = "Ant AI Launcher \(v) is available"
+                alert.messageText = "Clauncher \(v) is available"
                 alert.informativeText = "You have \(updates.currentVersion). Download the new version and replace the app in Applications."
                 alert.addButton(withTitle: "Download")
                 alert.addButton(withTitle: "Later")
@@ -661,7 +661,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } else {
                 alert.messageText = found ? "You're up to date" : "Couldn't check for updates"
                 alert.informativeText = found
-                    ? "Ant AI Launcher \(updates.currentVersion) is the latest version."
+                    ? "Clauncher \(updates.currentVersion) is the latest version."
                     : "GitHub couldn't be reached. Releases are at \(UpdateChecker.releasesPage.absoluteString)."
                 alert.runModal()
             }
@@ -677,7 +677,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         credits.addAttribute(.paragraphStyle, value: para, range: NSRange(location: 0, length: credits.length))
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "Ant AI Launcher",
+            .applicationName: "Clauncher",
             .credits: credits,
             .init(rawValue: "Copyright"): "© 2026 \(Brand.company)",
         ])
@@ -691,7 +691,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let host = NSHostingController(rootView: SettingsView(store: store))
             let win = NSWindow(contentViewController: host)
             // A plain titled window (no toolbar) so AppKit centres the title.
-            win.title = "Ant AI Launcher — \(Brand.company)"
+            win.title = "Clauncher — \(Brand.company)"
             win.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             win.titleVisibility = .visible
             win.toolbar = nil
@@ -721,7 +721,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static func showError(_ error: Error) {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "Ant AI Launcher"
+        alert.messageText = "Clauncher"
         alert.informativeText = error.localizedDescription
         alert.alertStyle = .warning
         alert.runModal()
@@ -737,7 +737,7 @@ final class MenuAction: NSObject {
 @main
 enum Main {
     static func main() {
-        // `AntAILauncher --status` prints each login and whether Claude is running for it, then exits.
+        // `Clauncher --status` prints each login and whether Claude is running for it, then exits.
         if CommandLine.arguments.contains("--status") {
             printStatus()
             exit(0)
@@ -747,7 +747,7 @@ enum Main {
             do { try Brand.writeIconset(to: URL(fileURLWithPath: CommandLine.arguments[i + 1])); exit(0) }
             catch { print(error); exit(1) }
         }
-        // `AntAILauncher --launch <login> [--folder <name or path>] [--terminal]` launches and exits, for scripts.
+        // `Clauncher --launch <login> [--folder <name or path>] [--terminal]` launches and exits, for scripts.
         if let i = CommandLine.arguments.firstIndex(of: "--launch") {
             exit(runCommandLineLaunch(Array(CommandLine.arguments[(i + 1)...])))
         }
@@ -759,7 +759,7 @@ enum Main {
         app.run()
     }
 
-    /// `AntAILauncher --status`: logins, sign-ins, live sessions, recent folders and usage.
+    /// `Clauncher --status`: logins, sign-ins, live sessions, recent folders and usage.
     private static func printStatus() {
         func spin(until done: () -> Bool, timeout: TimeInterval) {
             let deadline = Date().addingTimeInterval(timeout)
@@ -809,7 +809,7 @@ enum Main {
         guard let loginName = args.first,
               let account = config.accounts.first(where: { $0.name.caseInsensitiveCompare(loginName) == .orderedSame }) else {
             let names = config.accounts.map(\.name).joined(separator: ", ")
-            FileHandle.standardError.write("usage: AntAILauncher --launch <login> [--folder <name|path>] [--terminal]\nlogins: \(names)\n".data(using: .utf8)!)
+            FileHandle.standardError.write("usage: Clauncher --launch <login> [--folder <name|path>] [--terminal]\nlogins: \(names)\n".data(using: .utf8)!)
             return 2
         }
         var workspace: Workspace?
@@ -845,7 +845,7 @@ enum Main {
         let main = NSMenu()
         let appItem = NSMenuItem(); main.addItem(appItem)
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "Quit Ant AI Launcher", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit Clauncher", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
 
         let editItem = NSMenuItem(); main.addItem(editItem)

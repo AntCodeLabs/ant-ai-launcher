@@ -51,7 +51,7 @@ enum Brand {
             return true
         }
         img.isTemplate = true
-        img.accessibilityDescription = "Ant AI Launcher"
+        img.accessibilityDescription = "Clauncher"
         return img
     }
 

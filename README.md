@@ -1,4 +1,4 @@
-# Ant AI Launcher
+# Clauncher
 
 A macOS menu bar app for people who run Claude under more than one account. Keep each Claude Desktop and Claude Code login separate, open sessions in the right folder with the right login, and see every running session at a glance.
 
@@ -6,8 +6,10 @@ By [AntCodeLabs Limited](https://antcodelabs.ai). Not affiliated with Anthropic.
 
 ## Install
 
-1. Download the latest `Ant-AI-Launcher-<version>.zip` from [Releases](https://github.com/AntCodeLabs/ant-ai-launcher/releases/latest).
-2. Unzip it and drag **Ant AI Launcher** to Applications.
+*Clauncher was called Ant AI Launcher before 1.2.0. If you're updating, quit the old app, delete it from Applications and install Clauncher; your settings carry over.*
+
+1. Download the latest `Clauncher-<version>.zip` from [Releases](https://github.com/AntCodeLabs/ant-ai-launcher/releases/latest).
+2. Unzip it and drag **Clauncher** to Applications.
 3. Open it. The ant appears in the menu bar, and Settings opens so you can add folders.
 
 Needs macOS 14 or later, on Apple silicon or Intel, and [Claude Desktop](https://claude.ai/download). Terminal sessions also need [Claude Code](https://docs.claude.com/en/docs/claude-code) (`claude`).
@@ -59,12 +61,12 @@ Everything is read from files Claude already keeps on your Mac:
 
 The app never reads tokens, passwords or conversation text, and it never changes Claude's settings. Its only network request is a daily check of this repository's latest release.
 
-The first time you open a folder in a running Claude, or focus a Terminal tab, macOS asks to let Ant AI Launcher control that app. That permission is what lets it hand Claude the folder.
+The first time you open a folder in a running Claude, or focus a Terminal tab, macOS asks to let Clauncher control that app. That permission is what lets it hand Claude the folder.
 
 ## Command line
 
 ```bash
-AL="/Applications/Ant AI Launcher.app/Contents/MacOS/AntAILauncher"
+AL="/Applications/Clauncher.app/Contents/MacOS/Clauncher"
 "$AL" --launch Work --folder ~/code/my-project --terminal
 ```
 
@@ -74,7 +76,7 @@ AL="/Applications/Ant AI Launcher.app/Contents/MacOS/AntAILauncher"
 
 The first command starts a session for a login, in a configured folder name or any path (leave out `--terminal` for Claude Desktop). The second prints logins, sign-ins, live sessions, recent folders and usage.
 
-Settings live in `~/Library/Application Support/Ant AI Launcher/config.json`. You can edit them in **Settings…** or by hand; the menu re-reads the file each time it opens.
+Settings live in `~/Library/Application Support/Clauncher/config.json`. You can edit them in **Settings…** or by hand; the menu re-reads the file each time it opens.
 
 ## Build from source
 

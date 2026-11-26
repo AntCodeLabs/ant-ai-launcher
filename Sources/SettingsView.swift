@@ -89,7 +89,7 @@ struct SettingsView: View {
         let name = store.config.accounts[idx].name
         let alert = NSAlert()
         alert.messageText = "Remove “\(name)”?"
-        alert.informativeText = "This only removes it from Ant AI Launcher. Claude's data folder and sign-in are left untouched."
+        alert.informativeText = "This only removes it from Clauncher. Claude's data folder and sign-in are left untouched."
         alert.addButton(withTitle: "Remove")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }

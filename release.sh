@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds a signed, notarized release of Ant AI Launcher.
+# Builds a signed, notarized release of Clauncher.
 #
 #   ./release.sh               sign with Developer ID, notarize, staple, zip into dist/
 #   ./release.sh --publish     …then create GitHub Release v<VERSION> with the zip attached
@@ -16,10 +16,10 @@
 set -euo pipefail
 cd "${0:A:h}"
 
-APP_NAME="Ant AI Launcher"
-EXECUTABLE="AntAILauncher"
+APP_NAME="Clauncher"
+EXECUTABLE="Clauncher"
 REPO="AntCodeLabs/ant-ai-launcher"
-ENTITLEMENTS="Resources/AntAILauncher.entitlements"
+ENTITLEMENTS="Resources/Clauncher.entitlements"
 NOTARY_PROFILE="${NOTARY_PROFILE:-ant-ai-launcher}"
 PUBLISH=false; DRY_RUN=false
 for arg in "$@"; do
@@ -36,7 +36,7 @@ fail() { print -P "%F{red}error:%f $1" >&2; exit 1; }
 
 VERSION="$(tr -d '[:space:]' < VERSION)"
 APP="build/${APP_NAME}.app"
-ZIP="dist/Ant-AI-Launcher-${VERSION}.zip"
+ZIP="dist/Clauncher-${VERSION}.zip"
 
 # Signing identity.
 if $DRY_RUN; then
@@ -108,6 +108,6 @@ cat "$ZIP.sha256"
 if $PUBLISH; then
   step "Publishing GitHub Release v${VERSION}"
   gh release create "v${VERSION}" "$ZIP" "$ZIP.sha256" --repo "$REPO" \
-    --title "Ant AI Launcher ${VERSION}" --generate-notes
+    --title "Clauncher ${VERSION}" --generate-notes
 fi
 step "Done"

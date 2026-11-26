@@ -37,7 +37,7 @@ final class HotKeyCenter {
         let status = RegisterEventHotKey(keyCode, modifiers, EventHotKeyID(signature: OSType(0x434C_4C4E), id: id),
                                          GetApplicationEventTarget(), 0, &ref)
         guard status == noErr, let ref else {
-            NSLog("Ant AI Launcher: couldn't register hotkey \(keyCode) (\(status)); another app may be using it")
+            NSLog("Clauncher: couldn't register hotkey \(keyCode) (\(status)); another app may be using it")
             return nil
         }
         registered[id] = (ref, action)

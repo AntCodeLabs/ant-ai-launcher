@@ -30,7 +30,7 @@ final class UpdateChecker: ObservableObject {
     func check(completion: ((Bool) -> Void)? = nil) {
         var req = URLRequest(url: Self.api, timeoutInterval: 15)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        req.setValue("AntAILauncher", forHTTPHeaderField: "User-Agent")
+        req.setValue("Clauncher", forHTTPHeaderField: "User-Agent")
         URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
             guard let self else { return }
             var found = false

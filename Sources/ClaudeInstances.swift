@@ -12,7 +12,7 @@ enum LaunchError: LocalizedError {
         case .terminalDidNotStart: return "Terminal didn't start the session. Check Terminal for a dialog and try again."
         case .appleEvent(let s):
             if s == -1743 {
-                return "macOS blocked Ant AI Launcher from sending the folder to Claude. Allow it in System Settings → Privacy & Security → Automation."
+                return "macOS blocked Clauncher from sending the folder to Claude. Allow it in System Settings → Privacy & Security → Automation."
             }
             return "Couldn't hand the folder to the running Claude (error \(s))."
         }
