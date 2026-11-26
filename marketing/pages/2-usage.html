@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><script src="marks.js"></script><script src="icons.js"></script><script src="settings-common.js"></script>
+<style>html,body{width:1280px;height:900px}</style></head><body><div class="desk" id="d"></div>
+<script>
+const days=[['Thu',18.1],['Fri',31.4],['Sat',4.2],['Sun',1.9],['Mon',36.2],['Tue',44.6],['Wed',27.8]];
+const peak=Math.max(...days.map(d=>d[1]));
+const bars=days.map((d,i)=>`<div class="bar ${i==6?'today':''}"><span>$${d[1].toFixed(d[1]<10?2:0)}</span><div style="height:${Math.max(3,d[1]/peak*78)}px"></div><span>${d[0]}</span></div>`).join('');
+const inner = `
+ <div class="sect-h"><span>Status</span></div>
+ <div class="card">
+  <div class="row"><span class="k">Claude Desktop</span><span class="pill g">Signed in</span><span class="v">Running · 2.1 GB · 3% CPU</span></div>
+  <div class="row"><span class="k">Claude Code</span><span class="pill g">Signed in</span><span class="v">sam.rivera@acme.dev · Acme · Team</span></div>
+  <div class="row"><span class="k">Sessions open</span><span class="v">4 · 2 working · 1 needs you</span></div>
+ </div>
+ <div class="sect-h"><span>Usage at API prices</span><span style="color:var(--blue)">↻</span></div>
+ <div class="card">
+  <div class="stats">
+   <div class="stat"><small>Today</small><b>$27.80</b><i>42M tokens</i></div>
+   <div class="stat"><small>7 days</small><b>$164</b><i>251M tokens</i></div>
+   <div class="stat"><small>30 days</small><b>$612</b><i>1.02B tokens</i></div>
+   <div class="stat"><small>Sessions</small><b>4</b><i>today</i></div>
+  </div>
+  <div class="bars">${bars}</div>
+  <div class="models"><h4>By model · last 30 days</h4>
+   <table><tr><th>Model</th><th>Replies</th><th>Input</th><th>Cache write</th><th>Cache read</th><th>Output</th><th>Cost</th><th></th></tr>
+    <tr><td>Opus 5.5</td><td>9,412</td><td>1.1M</td><td>48.2M</td><td>731M</td><td>9.8M</td><td><b>$498.40</b></td><td class="share">81%</td></tr>
+    <tr><td>Sonnet 5.5</td><td>3,108</td><td>0.4M</td><td>21.6M</td><td>196M</td><td>4.1M</td><td><b>$112.30</b></td><td class="share">18%</td></tr>
+    <tr><td>Haiku 5.5</td><td>640</td><td>0.2M</td><td>3.9M</td><td>12M</td><td>0.6M</td><td><b>$1.30</b></td><td class="share">&lt;1%</td></tr>
+    <tr class="tot"><td>Total</td><td>13,160</td><td>1.7M</td><td>73.7M</td><td>939M</td><td>14.5M</td><td>$612.00</td><td></td></tr>
+   </table></div>
+  <div class="cap">What this usage would cost at Claude API pay-as-you-go list prices, not what a subscription charges. From Claude Code's own session logs on this Mac.</div>
+ </div>`;
+d.innerHTML = windowShell(inner,'Work','left:150px;top:100px;width:980px;height:640px') +
+ `<div class="callout" style="left:150px;top:770px;width:980px;text-align:center;font-size:15px">Know what each login really uses: tokens and pay-as-you-go cost, by model and by day.</div>`;
+</script></body></html>

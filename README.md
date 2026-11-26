@@ -4,6 +4,16 @@ A macOS menu bar app for people who run Claude under more than one account. Keep
 
 By [AntCodeLabs Limited](https://antcodelabs.ai). Not affiliated with Anthropic. The icon is an original drawing of a pistol shrimp, the real animal that snaps its oversized claw hard enough to fire a bubble.
 
+![Clauncher – the Claude Launcher for macOS](screenshots/clauncher-4-title.png)
+
+<p>
+  <img src="screenshots/clauncher-1-menu.png" width="32%" alt="The menu bar menu: every running session with what needs you first, and each login's folders and actions">
+  <img src="screenshots/clauncher-2-usage.png" width="32%" alt="Settings: sign-in status and usage at API prices, by day and by model">
+  <img src="screenshots/clauncher-3-folders.png" width="32%" alt="Settings: folders with shortcuts, Start My Day and saved prompts">
+</p>
+
+*Illustrations of the menu and Settings window with sample data (a fictional "Sam Rivera" at "Acme"). Regenerate them with `marketing/make-screenshots.sh`.*
+
 ## Install
 
 *Clauncher was called Ant AI Launcher before 1.2.0. If you're updating, quit the old app, delete it from Applications and install Clauncher; your settings carry over.*
@@ -86,6 +96,8 @@ Only Apple's Command Line Tools are needed (`xcode-select --install`).
 ./build.sh            # universal build into build/
 ./build.sh install    # build, copy to ~/Applications and open
 ```
+
+To rebuild the screenshots above after a UI or icon change, run `marketing/make-screenshots.sh`. It needs Google Chrome, and you edit the sample data in `marketing/pages/`.
 
 ## Releasing
 

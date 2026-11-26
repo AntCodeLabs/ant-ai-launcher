@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><script src="marks.js"></script><script src="icons.js"></script><script src="settings-common.js"></script>
+<style>html,body{width:1280px;height:900px}</style></head><body><div class="desk" id="d"></div>
+<script>
+const icon16 = k => I[k].replace('<svg','<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"');
+const ws=(open,icon,name,path,tags,opts)=>`<div class="ws"><div class="top"><span class="disc">${open?'▼':'▶'}</span><span style="color:#6e6e73;display:flex">${icon16(icon)}</span>
+ <div><div class="name">${name}${tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div><div class="path">${path}</div></div>
+ <div class="acts"><span>▶</span><span style="display:flex">${icon16('terminal')}</span></div></div>${opts||''}</div>`;
+const opts=`<div class="opts">
+  <div>Opens in&nbsp; <span class="seg"><span class="on">Claude Desktop</span><span>Terminal</span></span></div>
+  <div>Shortcut&nbsp; <span class="popup">⌃⌥⌘2</span></div>
+  <div><span class="toggle"></span>&nbsp; Open with Start My Day</div>
+  <div><b style="font-size:12px">Saved prompts</b></div>
+  <div><span class="field" style="width:130px">Review PRs</span> <span class="field" style="width:430px">Review open pull requests and summarise risky changes</span></div>
+  <div><span class="field" style="width:130px">Fix the build</span> <span class="field" style="width:430px">Run the test suite, fix what fails, and explain each fix</span></div>
+  <div style="color:var(--blue)">＋ Add Prompt</div></div>`;
+const inner = `
+ <div class="sect-h"><span>Claude Desktop</span></div>
+ <div class="card"><div class="row"><span class="k">Name</span><span>Work</span></div>
+  <div class="row"><span class="k">Data folder</span><span class="field" style="flex:1">~/Library/Application Support/Claude-Work</span><span class="btn">Choose…</span></div></div>
+ <div class="sect-h"><span>Claude Code in Terminal</span></div>
+ <div class="card"><div class="row"><span class="k">Config folder</span><span class="field" style="flex:1">~/.claude-work</span><span class="btn">Pick ▾</span></div></div>
+ <div class="sect-h"><span>Folders</span></div>
+ <div class="card">
+  ${ws(true,'folder','web-app','~/code/web-app',['⌃⌥⌘2','Start My Day','2 prompts'],opts)}
+  ${ws(false,'terminal','payments-api','~/code/payments-api',['⌃⌥⌘3','Start My Day'])}
+  ${ws(false,'folder','infra','~/code/infra',['Start My Day'])}
+  <div class="btns"><span class="btn">Add Folders…</span><span class="btn">Add Recent ▾</span><span class="btn primary">Show Claude</span></div>
+ </div>`;
+d.innerHTML = windowShell(inner,'Work','left:150px;top:84px;width:980px;height:690px') +
+ `<div class="callout" style="left:150px;top:800px;width:980px;text-align:center;font-size:15px">Folders, shortcuts and saved prompts for every login, plus a one-click Start My Day.</div>`;
+</script></body></html>

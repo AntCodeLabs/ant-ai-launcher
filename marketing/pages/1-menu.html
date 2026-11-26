@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><script src="marks.js"></script><script src="icons.js"></script>
+<style>html,body{width:1280px;height:900px}</style></head><body><div class="desk" id="d"></div>
+<script>
+const mi=(ic,lbl,o={})=>`<div class="mi ${o.cls||''}"><span class="ic">${I[ic]||ic||''}</span><span class="lbl">${lbl}${o.sub?`<small>${o.sub}</small>`:''}</span>${o.badge?`<span class="badge">${o.badge}</span>`:''}${o.key?`<span class="key">${o.key}</span>`:''}${o.chev?'<span class="chev">›</span>':''}</div>`;
+const hdr=t=>`<div class="hdr">${t}</div>`, sep='<div class="sep"></div>', dis=t=>`<div class="mi dis"><span class="ic"></span><span class="lbl">${t}</span></div>`;
+d.innerHTML = `
+<div class="menubar"><div class="left"><span class="apple"></span><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span></div>
+ <div class="right"><span class="mb-item active">${glyph()}<span class="mb-badge">2</span></span><span>Wed 26 Nov&nbsp; 10:42</span></div></div>
+<div class="menu" style="left:832px;top:36px">
+ ${hdr('Sessions — 1 needs you · 2 working · 5 open')}
+ ${mi('needs','Fix flaky checkout test',{sub:'payments-api · Work · Terminal · needs you: permission to run tests · 1 min ago',cls:'hl'})}
+ ${mi('done','Migrate auth to OAuth 2.1',{sub:'web-app · Work · Desktop · done 4 min ago'})}
+ ${mi('working','Refactor billing service',{sub:'payments-api · Work · Desktop · working · 12 min'})}
+ ${mi('working','Draft release notes',{sub:'mobile-app · Personal · Background · working · 3 min'})}
+ ${mi('idle','Dependency upgrades',{sub:'infra · Work · Terminal · idle · 1 hr ago'})}
+ ${sep}${hdr('Work')}
+ ${mi(I.dotOn,'Show Claude',{badge:'2.1 GB · 3% CPU'})}
+ ${dis('sam.rivera@acme.dev · today 42M tokens ≈ $27.80 at API prices · 4 sessions')}
+ ${mi('folder','web-app',{badge:'⌃⌥⌘2'})}
+ ${mi('terminal','payments-api — Terminal',{badge:'⌃⌥⌘3'})}
+ ${mi('folder','infra')}
+ ${mi('plus','Open Folder…')}
+ ${mi('clock','Recent',{chev:1})}
+ ${mi('bubble','New Session with Prompt…')}
+ ${mi('cloud','New Cloud Session…')}
+ ${mi('bookmark','Saved Prompts',{chev:1})}
+ ${mi('sunrise','Start My Day (3 folders)')}
+ ${mi('more','More',{chev:1})}
+ ${sep}${hdr('Personal')}
+ ${mi(I.dotOn,'Show Claude',{badge:'1.4 GB · 1% CPU'})}
+ ${dis('sam@example.com · today 18M tokens ≈ $9.40 at API prices · 2 sessions')}
+ ${mi('folder','mobile-app',{badge:'⌃⌥⌘1'})}
+ ${mi('more','More',{chev:1})}
+ ${sep}
+ ${dis('⌥ Terminal · ⇧ continue · ⌃ quit or stop')}
+ ${mi('','Settings…',{key:'⌘,'})}
+</div>
+<div class="callout" style="left:70px;top:150px;width:600px">
+ <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><img src="icon.png" style="width:72px;height:72px"><div style="font-size:30px;font-weight:700">Clauncher</div></div>
+ Every Claude session, one glance away.
+ <span style="margin-top:8px">Desktop, Terminal and background sessions for all your logins, with what needs you first. Click to jump straight to it.</span></div>`;
+</script></body></html>
