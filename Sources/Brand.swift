@@ -44,10 +44,10 @@ enum Brand {
         ctx.restoreGState()
     }
 
-    /// Monochrome template ant for the menu bar.
+    /// Monochrome template pistol shrimp (Clauncher's mark) for the menu bar.
     static var menuBarIcon: NSImage {
         let img = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { rect in
-            drawAnt(in: rect.insetBy(dx: 0, dy: 0), color: .black, lineWidth: 1.35)
+            drawShrimp(in: rect, color: .black, lineWidth: 1.3)
             return true
         }
         img.isTemplate = true
@@ -55,7 +55,7 @@ enum Brand {
         return img
     }
 
-    /// The app icon: acid-green ant on the site's navy-to-ink gradient, in a rounded square.
+    /// The app icon: Clauncher's acid-green pistol shrimp on the AntCodeLabs navy-to-ink gradient, in a rounded square.
     static func appIcon(pixels: Int) -> NSBitmapImageRep {
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels,
                                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -84,9 +84,9 @@ enum Brand {
                                endCenter: CGPoint(x: n / 2, y: n * 0.75), endRadius: n * 0.7, options: [.drawsAfterEndLocation])
         // Flip so the ant (y-down coordinates) draws upright.
         ctx.translateBy(x: 0, y: n); ctx.scaleBy(x: 1, y: -1)
-        let antRect = tile.insetBy(dx: tile.width * 0.17, dy: tile.width * 0.17)
+        let markRect = tile.insetBy(dx: tile.width * 0.13, dy: tile.width * 0.13)
         ctx.setShadow(offset: .zero, blur: n * 0.025, color: acid.withAlphaComponent(0.55).cgColor)
-        drawAnt(in: antRect, color: acid, lineWidth: max(1, antRect.width / 32 * 1.6))
+        drawShrimp(in: markRect, color: acid, lineWidth: max(1, markRect.width / 32 * 1.35))
         ctx.restoreGState()
 
         NSGraphicsContext.restoreGraphicsState()

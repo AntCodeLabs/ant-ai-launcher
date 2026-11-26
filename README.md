@@ -1,8 +1,8 @@
-# Clauncher
+# Clauncher – the Claude Launcher
 
 A macOS menu bar app for people who run Claude under more than one account. Keep each Claude Desktop and Claude Code login separate, open sessions in the right folder with the right login, and see every running session at a glance.
 
-By [AntCodeLabs Limited](https://antcodelabs.ai). Not affiliated with Anthropic.
+By [AntCodeLabs Limited](https://antcodelabs.ai). Not affiliated with Anthropic. The icon is an original drawing of a pistol shrimp, the real animal that snaps its oversized claw hard enough to fire a bubble.
 
 ## Install
 

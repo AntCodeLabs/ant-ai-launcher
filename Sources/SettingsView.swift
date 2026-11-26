@@ -65,7 +65,7 @@ struct SettingsView: View {
                         .id(store.config.accounts[idx].id)
                 } else {
                     VStack(spacing: 8) {
-                        AntMark().stroke(.secondary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round)).frame(width: 48, height: 48)
+                        ShrimpMark().stroke(.secondary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)).frame(width: 56, height: 56)
                         Text("Select a login, or add one with +").foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
