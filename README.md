@@ -33,7 +33,15 @@ Each login is a separate Claude sign-in:
 - **Claude Desktop** runs as its own instance with `--user-data-dir`, for example `~/Library/Application Support/Claude-Work`. Leave it empty for Claude's normal profile.
 - **Claude Code in Terminal** runs `claude` with `CLAUDE_CONFIG_DIR`, for example `~/.claude-work`. Shell aliases for `claude` don't override it.
 
-On first run the app adds Claude's normal profile, plus any other `Claude-<name>` Desktop profiles and `~/.claude-<name>` config folders it finds. To add another login, press **+** in Settings, open it from the menu, and sign in.
+On first run the app adds Claude's normal profile, plus any other `Claude-<name>` Desktop profiles and `~/.claude-<name>` config folders it finds.
+
+To add a login:
+
+1. Press **+** in Settings and give it a name, e.g. "Client". It gets its own new folders, `~/Library/Application Support/Claude-Client` and `~/.claude-client`, which follow the name until you first sign in.
+2. Choose **Open Claude** under it in the menu, and sign in to Claude Desktop with the account you want.
+3. Choose **Claude Code in Terminal** (⌥ on Open Claude), and run `/login`.
+
+The login's Status in Settings then shows who each one is signed in as. Settings also warns you if two logins point at the same folder, since they'd share a sign-in.
 
 ## Launch
 

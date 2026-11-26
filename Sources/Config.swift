@@ -92,6 +92,16 @@ struct Account: Codable, Identifiable, Hashable {
         return t.isEmpty ? nil : ClaudeInstances.normalise(t)
     }
 
+    /// Folder-name part derived from a login name: "Client Work" → "Client-Work".
+    static func folderStem(_ name: String) -> String {
+        let plain = name.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: .init(identifier: "en_US_POSIX"))
+        let parts = plain.split { !($0.isASCII && ($0.isLetter || $0.isNumber)) }.map(String.init)
+        return parts.isEmpty ? "Login" : parts.joined(separator: "-")
+    }
+    /// Default folders for a login called `name`: its own Claude Desktop profile and Claude Code config.
+    static func defaultDataDir(for name: String) -> String { "~/Library/Application Support/Claude-\(folderStem(name))" }
+    static func defaultCLIConfigDir(for name: String) -> String { "~/.claude-\(folderStem(name).lowercased())" }
+
     /// The Claude Code config folder this login's terminal sessions actually use (~/.claude when unset).
     var effectiveCLIConfigDir: String {
         resolvedCLIConfigDir ?? ClaudeInstances.normalise("~/.claude")

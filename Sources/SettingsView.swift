@@ -77,11 +77,28 @@ struct SettingsView: View {
         .onAppear { if nav.selection == nil { nav.selection = store.config.accounts.first?.id } }
     }
 
+    /// Adds "Login N" with its own, unused Claude Desktop and Claude Code folders, so it never shares a
+    /// sign-in with another login by accident.
     private func addAccount() {
-        let n = store.config.accounts.count + 1
-        let account = Account(name: "Login \(n)", dataDir: "~/Library/Application Support/Claude-Login\(n)")
-        store.config.accounts.append(account)
-        nav.selection = account.id
+        let fm = FileManager.default
+        let accounts = store.config.accounts
+        var n = accounts.count + 1
+        while true {
+            let name = "Login \(n)"
+            let data = Account.defaultDataDir(for: name), cli = Account.defaultCLIConfigDir(for: name)
+            let taken = accounts.contains {
+                $0.name == name || $0.resolvedDataDir == ClaudeInstances.normalise(data)
+                    || $0.effectiveCLIConfigDir == ClaudeInstances.normalise(cli)
+            }
+            if !taken && !fm.fileExists(atPath: ClaudeInstances.normalise(data))
+                && !fm.fileExists(atPath: ClaudeInstances.normalise(cli)) {
+                let account = Account(name: name, dataDir: data, cliConfigDir: cli)
+                store.config.accounts.append(account)
+                nav.selection = account.id
+                return
+            }
+            n += 1
+        }
     }
 
     private func removeSelected() {
@@ -124,6 +141,9 @@ struct AccountEditor: View {
                      ? "Uses Claude's normal profile (\(ClaudeInstances.defaultDataDir))."
                      : "Launched with --user-data-dir, so it keeps its own sign-in. Resolves to \(account.resolvedDataDir)")
                     .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                if let other = sharing(\.resolvedDataDir) {
+                    sharedWarning("Same Claude Desktop folder as “\(other)”, so both open the same Claude with the same sign-in.")
+                }
             } header: { Text("Claude Desktop") }
 
             Section {
@@ -136,14 +156,46 @@ struct AccountEditor: View {
                     }
                     .fixedSize()
                 }
-                Text("Terminal sessions run `claude` with CLAUDE_CONFIG_DIR=\(abbreviate(account.effectiveCLIConfigDir)), so they use that Claude Code sign-in.")
+                Text("Terminal sessions run `claude` with CLAUDE_CONFIG_DIR=\(abbreviate(account.effectiveCLIConfigDir)), so they use that Claude Code sign-in. A new folder is created the first time; sign in there with /login.")
                     .font(.caption).foregroundStyle(.secondary)
+                if let other = sharing(\.effectiveCLIConfigDir) {
+                    sharedWarning("Same Claude Code config folder as “\(other)”, so Terminal sessions here use that login's account.")
+                }
             } header: { Text("Claude Code in Terminal") }
 
             foldersSection
         }
         .formStyle(.grouped)
         .onAppear { usage.refreshIfStale() }
+        .onChange(of: account.name) { old, new in followRename(from: old, to: new) }
+    }
+
+    // MARK: Shared folders
+
+    /// Name of another login that uses the same folder, if any.
+    private func sharing(_ key: KeyPath<Account, String>) -> String? {
+        config.accounts.first { $0.id != account.id && $0[keyPath: key] == account[keyPath: key] }
+            .map { $0.name.isEmpty ? "Untitled" : $0.name }
+    }
+
+    private func sharedWarning(_ text: String) -> some View {
+        Label(text, systemImage: "exclamationmark.triangle.fill")
+            .font(.caption)
+            .foregroundStyle(.orange)
+    }
+
+    /// While a login still uses its default folders and they don't exist yet (nobody has signed in),
+    /// renaming it renames them too: "Client" → Claude-Client and ~/.claude-client.
+    private func followRename(from old: String, to new: String) {
+        let fm = FileManager.default
+        if account.dataDir == Account.defaultDataDir(for: old),
+           !fm.fileExists(atPath: account.resolvedDataDir) {
+            account.dataDir = Account.defaultDataDir(for: new)
+        }
+        if account.cliConfigDir == Account.defaultCLIConfigDir(for: old),
+           let dir = account.resolvedCLIConfigDir, !fm.fileExists(atPath: dir) {
+            account.cliConfigDir = Account.defaultCLIConfigDir(for: new)
+        }
     }
 
     // MARK: Status
