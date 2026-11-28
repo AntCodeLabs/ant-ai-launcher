@@ -28,7 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let button = statusItem.button {
             button.image = Brand.menuBarIcon
             button.imagePosition = .imageLeft
-            button.toolTip = "Clauncher · \(Brand.company)"
+            button.toolTip = "Clauncher"
         }
         let menu = NSMenu()
         menu.delegate = self
@@ -120,7 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(action("Check for Updates…") { [weak self] in self?.checkForUpdates() })
         }
         menu.addItem(action("About Clauncher") { [weak self] in self?.showAbout() })
-        menu.addItem(action("\(Brand.company) · \(Brand.websiteLabel)", symbol: "arrow.up.right.square") {
+        menu.addItem(action("Made by \(Brand.company) · \(Brand.websiteLabel)", symbol: "arrow.up.right.square") {
             NSWorkspace.shared.open(Brand.website)
         })
         let settings = action("Settings…") { [weak self] in self?.openSettings() }
@@ -679,7 +679,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "Clauncher",
             .credits: credits,
-            .init(rawValue: "Copyright"): "© 2026 \(Brand.company)",
+            .init(rawValue: "Copyright"): "© 2026 \(Brand.legalName)",
         ])
     }
 
@@ -691,7 +691,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let host = NSHostingController(rootView: SettingsView(store: store))
             let win = NSWindow(contentViewController: host)
             // A plain titled window (no toolbar) so AppKit centres the title.
-            win.title = "Clauncher — \(Brand.company)"
+            win.title = "Clauncher"
             win.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             win.titleVisibility = .visible
             win.toolbar = nil

@@ -1,9 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// AntCodeLabs Limited branding: the line-drawn ant mark from antcodelabs.ai, its colours and link.
+/// AntCodeLabs branding: the line-drawn ant mark from antcodelabs.ai, its colours and link.
 enum Brand {
-    static let company = "AntCodeLabs Limited"
+    static let company = "AntCodeLabs"
+    /// Legal name, used only in the copyright line.
+    static let legalName = "AntCodeLabs Limited"
     static let website = URL(string: "https://antcodelabs.ai")!
     static let websiteLabel = "antcodelabs.ai"
     static let repository = "AntCodeLabs/ant-ai-launcher"
@@ -111,7 +113,7 @@ struct AntMark: Shape {
     func path(in rect: CGRect) -> Path { Path(Brand.antPath(in: rect)) }
 }
 
-/// "🐜 AntCodeLabs Limited · antcodelabs.ai" footer used in Settings.
+/// "🐜 Made by AntCodeLabs · antcodelabs.ai" footer used in Settings.
 struct BrandFooter: View {
     var body: some View {
         Link(destination: Brand.website) {
@@ -122,7 +124,7 @@ struct BrandFooter: View {
                     .padding(3)
                     .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: Brand.ink)))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(Brand.company).font(.caption.weight(.semibold)).foregroundStyle(.primary)
+                    Text("Made by \(Brand.company)").font(.caption.weight(.semibold)).foregroundStyle(.primary)
                     Text(Brand.websiteLabel).font(.caption2).foregroundStyle(.secondary)
                 }
             }
